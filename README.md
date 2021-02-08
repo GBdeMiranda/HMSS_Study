@@ -1,0 +1,2 @@
+# HMSS_Study
+Code developed for the work entitled Stable and Stabilized Hybrid Finite Element Methods for Miscible Flows in Heterogeneous Porous Media, in order to obtain the title of master in computational modeling. In this work, a study is carried out on hybrid methods of stable and stabilized finite elements for modeling incompressible miscible displacements in porous media by the transport and Darcy's equations.
