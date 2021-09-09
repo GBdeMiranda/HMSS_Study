@@ -48,14 +48,12 @@
 #include <cmath>
 
 using namespace dealii; using namespace std;
-
 template <int dim>
 class UnifiedBase {
 public:
-
     UnifiedBase(const unsigned int degree) : degree(degree), dof_handler_local(triangulation), quadrature(degree + 2),
-                fe_local(FE_DGQ<dim>(degree), dim, FE_DGQ<dim>(degree), 1 ),
-//                fe_local(FE_DGRaviartThomas<dim>(degree), 1, FE_DGQ<dim>(degree), 1 ),
+//                fe_local(FE_DGQ<dim>(degree), dim, FE_DGQ<dim>(degree), 1 ),
+                fe_local(FE_DGRaviartThomas<dim>(degree), 1, FE_DGQ<dim>(degree), 1 ),
                 fe(degree), dof_handler(triangulation), face_quadrature(degree + 2)
                 , dof_handler_perm(triangulation), fe_perm(degree)  /// Permeability Field
                 {}

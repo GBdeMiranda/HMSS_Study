@@ -84,7 +84,7 @@ public:
             this->system_rhs.reinit(this->dof_handler.n_dofs());
             this->system_matrix.reinit(this->sparsity_pattern);
 
-            //Darcy -- u^{n+1}  --  BEGIN
+            ///Darcy -- u^{n+1}  --  BEGIN   |||   Uncomment to insert strong coupling
             change_boundary_darcy(current_time);
 
             assemble_system (true, false, current_time);
@@ -93,7 +93,7 @@ public:
 
             this->system_rhs.reinit(this->dof_handler.n_dofs());
             this->system_matrix.reinit(this->sparsity_pattern);
-            //Darcy -- u^{n+1}   --  END
+            ///Darcy -- u^{n+1}   --  END
 
             cout << "   -> Current time:  " << current_time << endl;
 
@@ -244,11 +244,11 @@ private:
         Tensor<2, dim> dispersion_tensor;
 
 ///     STABILIZATION PARAMS
-        const double delta1 = -0.5;
-        const double delta2 =  0.5;
-        const double delta3 =  0.5;
+        const double delta1 = -0.;
+        const double delta2 =  0.;
+        const double delta3 =  0.;
 
-//        double Pe_global = FLT_MIN;
+        double Pe_global = FLT_MIN;
 
         for (const auto &cell : this->dof_handler.active_cell_iterators()) {
             typename DoFHandler<dim>::active_cell_iterator loc_cell (&this->triangulation, cell->level(), cell->index(), &this->dof_handler_local);
@@ -271,10 +271,10 @@ private:
             for (unsigned int q=0; q<n_q_points; ++q) {
                 if(Transport) {
                     dispersion_tensor = get_local_dispersion_tensor(velocities[q]);
-//                    double Pe_local = ( velocities[q].norm() ) / ( linfty_norm(dispersion_tensor) );
-//                    if(Pe_local > Pe_global){
-//                        Pe_global = Pe_local * 3.67;
-//                    }
+                    double Pe_local = ( velocities[q].norm() ) / ( linfty_norm(dispersion_tensor) );
+                    if(Pe_local > Pe_global){
+                        Pe_global = Pe_local * 3.67;
+                    }
                 }
                 else {
                     viscosity = viscosity_res * pow( concentration[q] * ( pow(viscosity_ratio, 1./4. ) - 1.) + 1., -4.);
@@ -435,13 +435,13 @@ private:
                 }
             }
         }
-//        cout << "Peclet: " 15<< Pe_global << endl;
+        cout << "Peclet: " << Pe_global << endl;
     }
 };
 
 int main () {
 
-    const int dim = 2, degree = 2;
+    const int dim = 2, degree = 1;
     const double final_time = 1.4;
 
     UnifiedProblem<dim> unified(degree);

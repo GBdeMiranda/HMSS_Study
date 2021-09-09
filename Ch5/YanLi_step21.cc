@@ -8,8 +8,9 @@
 using namespace dealii;
 using namespace std;
 
-const double fi = 1.0 , alpha_mol = 1.8e-5, alpha_l = 1.8e-3, alpha_t = 1.8e-4;          // TRANSP PARAMS
+const double fi = 1.0 , alpha_mol = 1.8e-5, alpha_l = 1.8e-3, alpha_t = 1.8e-4;  // TRANSP PARAMS
 const double permeability = 1.0, viscosity_res = 1., viscosity_ratio  = 100.;    // DARCY  PARAMS
+
 namespace RandomMedium {
     template <int dim>
     class KScalar : public Function<dim> {
@@ -85,7 +86,7 @@ public:
     UnifiedProblem (const unsigned int degree) : UnifiedBase<dim>(degree) {}
 
     void run (int numberCells, double inf_domain, double sup_domain, const double final_time ) {
-        string dirname  = "output/YanLi/d" + Utilities::to_string(this->degree) + "/";
+        string dirname  = "output/YanLi/MobAdv/d" + Utilities::to_string(this->degree) + "/";
 
         make_grid_and_dofs( numberCells, inf_domain, sup_domain);
 
@@ -104,8 +105,8 @@ public:
         this->system_rhs.reinit(this->dof_handler.n_dofs());
         this->system_matrix.reinit(this->sparsity_pattern);
 
-//        string tensor_name = "Random_t";
-        string tensor_name = "Crack_t";
+        string tensor_name = "Random";
+//        string tensor_name = "Crack";
         this->output_results (false, dirname, tensor_name);
         this->output_perms ( dirname , tensor_name); /// Permeability Field
 
@@ -118,6 +119,7 @@ public:
             assemble_system (false, true, current_time);
 
             current_time += dt; // c^{n+1} = 2c^{n+1/2} - c^{n}
+            string filenameT = tensor_name + "_t" + Utilities::to_string(round( current_time/(2*dt) ),0);
 
             this->transp_solution_local.add(2. , this->transp_solution_local_mid, -2., this->transp_solution_local); // c^{n} = c^{n} + 2c^{n+1/2} - 2c^{n}
 
@@ -125,21 +127,20 @@ public:
             this->system_matrix.reinit(this->sparsity_pattern);
 
             //Darcy -- u^{n+1}  --  BEGIN
-//            change_boundary_darcy(current_time);
-//
-//            assemble_system (true, false, current_time);
-//            this->solve();
-//            assemble_system (false, false, current_time);
-//
-//            this->system_rhs.reinit(this->dof_handler.n_dofs());
-//            this->system_matrix.reinit(this->sparsity_pattern);
+            change_boundary_darcy(current_time);
+
+            assemble_system (true, false, current_time);
+            this->solve();
+            assemble_system (false, false, current_time);
+
+            this->system_rhs.reinit(this->dof_handler.n_dofs());
+            this->system_matrix.reinit(this->sparsity_pattern);
+            this->output_results (false, dirname, filenameT);
             //Darcy -- u^{n+1}   --  END
 
             cout << "   -> Current time:  " << current_time << endl;
 
-            string filenameT = tensor_name + "_t" + Utilities::to_string(round( current_time/(2*dt) ),0);
             this->output_results (true, dirname, filenameT );
-            this->output_results (false, dirname, filenameT);
         }
     }
 
@@ -159,7 +160,6 @@ private:
     }
 
     void change_boundary_transport( double current_time  ){
-
             ConcentrationBoundary<dim> boundary_function;
             boundary_function.set_time(current_time);
             this->constraints.clear();
@@ -255,8 +255,8 @@ private:
         const FEValuesExtractors::Scalar  scalar_var (dim);
 
 ///     DARCY  PARAMS
-//        const RandomMedium::KScalar<dim> k_perm;
-        const SingleCurvingCrack::KScalar<dim> k_perm;
+        const RandomMedium::KScalar<dim> k_perm;
+//        const SingleCurvingCrack::KScalar<dim> k_perm;
         vector< double > k_values           (n_q_points);
         vector< double > k_inverse_values   (n_q_points);
 
@@ -264,15 +264,15 @@ private:
 //            this->constraints2.close();
 //            VectorTools::project(this->dof_handler_perm, this->constraints2, QGauss<dim>(this->degree), k_perm, this->permeability_local);
 //        }
-        double viscosity = 5.0;
+        double viscosity = 1.0;
 
 ///     TRANSP PARAMS
         Tensor<2, dim> dispersion_tensor;
 
 ///     STABILIZATION PARAMS
-        const double delta1 = -0.;
-        const double delta2 =  0.;
-        const double delta3 =  0.;
+        const double delta1 = -0.5;
+        const double delta2 =  0.5;
+        const double delta3 =  0.5;
 
 //        double Pe_global = FLT_MIN;
 
@@ -299,7 +299,7 @@ private:
 //                    double Pe_local = ( velocities[q].norm () ) / ( linfty_norm(dispersion_tensor) );
 //                    if(Pe_local > Pe_global){
 //                        Pe_global = Pe_local;
-//                    }c
+//                    }
                 }
                 else {
                     viscosity = viscosity_res * pow( concentration[q] * ( pow(viscosity_ratio, 1./4. ) - 1.) + 1., -4.);
@@ -340,7 +340,6 @@ private:
                             A_matrix(i, j) += delta1 * k_values[q]  * (k_inverse_values[q]* phi_j_s + grad_phi_j_c)
                                                                                   * (k_inverse_values[q]* phi_i_s + grad_phi_i_c) * JxW;
 
-
                             A_matrix(i,j) += delta2 * k_inverse_values[q] * div_phi_j_s * div_phi_i_s * JxW;  // 0.5 * (div u, div v)
 
                             A_matrix(i,j) += delta3 * k_inverse_values[q] * curl_phi_i_s * curl_phi_j_s * JxW;  // 0.5 * (||K|| rot Au, rot Av)
@@ -351,7 +350,6 @@ private:
                     }
                 }
             }
-
             if(Transport) {
                 /// Loop nas faces dos elementos
                 for ( unsigned int face_n=0; face_n<GeometryInfo<dim>::faces_per_cell; ++face_n ) {
@@ -399,7 +397,6 @@ private:
 
                                     B_matrix (i, j) += phi_i_s * normal * phi_j_m * JxW;
                                     BT_matrix(j, i) += phi_i_s * normal * phi_j_m * JxW;
-
 
                                     if(face_vels[q] * normal < 0)   B_matrix(i, j)  -= tr * face_vels[q] * normal * phi_j_m * phi_i_c * JxW; // Egger
                                     else                            BT_matrix(j, i) += tr * face_vels[q] * normal * phi_j_m * phi_i_c * JxW; // Egger
@@ -467,9 +464,8 @@ private:
 };
 
 int main () {
-
-    const int dim = 2, degree = 1, mesh_refinement = 5;
-    const double final_time = 1.7;
+    const int dim = 2, degree = 3, mesh_refinement = 5;
+    const double final_time = 1.0;
 
     UnifiedProblem<dim> unified(degree);
     unified.run( mesh_refinement, 0.0, 1.0, final_time );

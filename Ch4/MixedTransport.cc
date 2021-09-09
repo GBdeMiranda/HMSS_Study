@@ -352,7 +352,7 @@ private:
 
 int main () {
     const int    dim        = 2;
-    const int    degree     = 2;
+    const int    degree     = 1;
     const double final_time = pow( 0.25, (degree+1.0)/2 );
 
     ConvergenceTable convergence_table;

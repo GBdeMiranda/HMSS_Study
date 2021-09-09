@@ -237,8 +237,8 @@ protected :
         c_l2_error = VectorTools::compute_global_error(triangulation, cellwise_errors, VectorTools::L2_norm);
 
         convergence_table.add_value("cells", triangulation.n_active_cells());
-        convergence_table.add_value("L2_c", c_l2_error);
         convergence_table.add_value("L2_sigma", s_l2_error);
+        convergence_table.add_value("L2_c", c_l2_error);
     }
 };
 

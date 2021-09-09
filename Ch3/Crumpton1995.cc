@@ -147,9 +147,10 @@ private:
 
     void assemble_system( bool globalProblem ) {
 
-        const double delta1 = -0.5;
-        const double delta2 =  0.5;
-        const double delta3 =  0.5;
+        const double delta  =  0.5;
+        const double delta1 = -delta;
+        const double delta2 =  delta;
+        const double delta3 =  delta;
 
         FEValues<dim> fe_values_local(this->fe_local, this->quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values);
         FEFaceValues<dim> fe_face_values(this->fe, this->face_quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
@@ -333,16 +334,16 @@ private:
 };
 
 int main() {
-    ConvergenceTable convergence_table;
-
     const int dim = 2;
-    const int degree = 1;
-    for (int i = 2; i <= 7; ++i) {
-        cout << "   ---   Refinement #" << i << "   ---   " << endl;
-        Crumpton<dim> mixed_laplace_problem(degree );
-        mixed_laplace_problem.run( i, convergence_table );
-    }
-    show_convergence(convergence_table, dim );
+    for (int degree = 1; degree <= 3; ++degree) {
+        ConvergenceTable convergence_table;
 
+        for (int i = 2; i <= 7; ++i) {
+            cout << "   ---   Refinement #" << i << "   ---   " << endl;
+            Crumpton<dim> mixed_laplace_problem(degree);
+            mixed_laplace_problem.run(i, convergence_table);
+        }
+        show_convergence(convergence_table, dim, degree, "Crump_DG_D");
+    }
     return 0;
 }

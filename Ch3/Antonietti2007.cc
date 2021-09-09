@@ -148,9 +148,10 @@ private:
 
     void assemble_system (bool globalProblem)  {
 
-        const double del1 = -0.5;
-        const double del2 =  0.5;
-        const double del3 =  0.5;
+        const double del  =  0.5;
+        const double del1 = -del;
+        const double del2 =  del;
+        const double del3 =  del;
 
         FEValues<dim>     fe_values_local(this->fe_local, this->quadrature, update_values | update_gradients | update_quadrature_points | update_JxW_values);
         FEFaceValues<dim> fe_face_values(this->fe, this->face_quadrature, update_values | update_normal_vectors | update_quadrature_points | update_JxW_values);
@@ -348,15 +349,15 @@ private:
 
 int main () {
     const int dim = 2;
-    const int degree = 3;
-    ConvergenceTable convergence_table;
+    for (int degree = 1; degree <= 3; ++degree) {
+        ConvergenceTable convergence_table;
 
-    for (int i = 2; i < 8; ++i) {
-        cout << endl << "   ---   Refinement #" << i << "   ---   " << endl;
-        AntoniettiHeltai<dim> mixed_laplace_problem(degree);
-        mixed_laplace_problem.run (i, convergence_table);
+        for (int i = 2; i < 8; ++i) {
+            cout << endl << "   ---   Refinement #" << i << "   ---   " << endl;
+            AntoniettiHeltai<dim> mixed_laplace_problem(degree);
+            mixed_laplace_problem.run(i, convergence_table);
+        }
+        show_convergence(convergence_table, dim, degree, "Anton_DG_D");
     }
-
-    show_convergence( convergence_table, dim );
     return 0;
 }

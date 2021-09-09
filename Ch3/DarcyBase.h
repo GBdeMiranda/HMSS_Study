@@ -23,6 +23,8 @@
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_in.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_renumbering.h>
@@ -49,11 +51,11 @@ template <int dim>
 class DarcyBase {
 public:
     DarcyBase(const unsigned int degree) : degree(degree),
-//                fe_local( FE_DGQLegendre<dim>(degree),   dim, FE_DGQLegendre<dim>(degree), 1 ),     // Stabilized
-                fe_local( FE_DGRaviartThomas<dim>(degree), 1, FE_DGQLegendre<dim>(degree), 1 ),     // Stable
+                fe_local( FE_DGQ<dim>(degree), dim, FE_DGQ<dim>(degree), 1 ),     // Stabilized
+//                fe_local( FE_DGRaviartThomas<dim>(degree), 1, FE_DGQ<dim>(degree), 1 ),     // Stable
                 dof_handler_local(triangulation), quadrature(degree + 2),
-                fe(degree ), dof_handler(triangulation), face_quadrature(degree + 2)
-//                fe(degree-1), dof_handler(triangulation), face_quadrature( degree )
+//                fe(degree ), dof_handler(triangulation), face_quadrature(degree + 2)
+                fe(degree-1), dof_handler(triangulation), face_quadrature( degree )
                 { }
 
 protected :
@@ -64,8 +66,8 @@ protected :
     DoFHandler<dim>     dof_handler_local;
     Vector<double>      solution_local;
 
-    FE_FaceQ<dim>   fe;                                               // Discontinuous Multiplier
-//    FE_TraceQ<dim>  fe;                                              // Continuous Multiplier
+//    FE_FaceQ<dim>   fe;                                               // Discontinuous Multiplier
+    FE_TraceQ<dim>  fe;                                              // Continuous Multiplier
 
     QGauss<dim  >      quadrature;
     QGauss<dim-1> face_quadrature;
@@ -147,8 +149,8 @@ protected :
         ofstream output(filename.c_str());
 
         DataOut<dim> data_out;
-        vector<string> names(dim, "Velocity");
-        names.emplace_back("Pressure");
+        vector<string> names(dim, "Vector");
+        names.emplace_back("Scalar");
         vector<DataComponentInterpretation::DataComponentInterpretation> component_interpretation
                 (dim + 1, DataComponentInterpretation::component_is_part_of_vector);
         component_interpretation[dim] = DataComponentInterpretation::component_is_scalar;
@@ -193,7 +195,7 @@ protected :
     }
 };
 
-void show_convergence( ConvergenceTable &convergence_table , int dim, string filename_dir = "" ) {
+void show_convergence( ConvergenceTable &convergence_table , int dim, int degree, string filename_extra = "") {
     convergence_table.set_precision("L2_u", 3);
     convergence_table.set_scientific("L2_u", true);
     convergence_table.evaluate_convergence_rates("L2_u", "cells", ConvergenceTable::reduction_rate_log2, dim);
@@ -203,12 +205,12 @@ void show_convergence( ConvergenceTable &convergence_table , int dim, string fil
     convergence_table.evaluate_convergence_rates("L2_p", "cells", ConvergenceTable::reduction_rate_log2, dim);
 
     convergence_table.write_text(cout);
-
-    string filenametex = filename_dir + "ConvergenceRates";
-    ofstream  tex_output(filenametex + ".tex");
-    convergence_table.write_tex(tex_output);
+    string filename_dir = "output/d" + Utilities::to_string(degree) + "/";
+    string filenametex = filename_dir + "ConvRates" + filename_extra;
+//    ofstream  tex_output(filenametex + ".tex");
+//    convergence_table.write_tex(tex_output);
     ofstream data_output(filenametex + ".dat");
-    convergence_table.write_text(data_output);
+    convergence_table.write_text(data_output, TableHandler::org_mode_table);
 }
 
 #endif //HYBRIDMIXED_DARCYBASE_H

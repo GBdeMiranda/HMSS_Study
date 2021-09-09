@@ -11,6 +11,29 @@
 using namespace dealii;
 using namespace std;
 
+template <int dim>
+void print_mesh_info(const Triangulation<dim> &triangulation, const string & name, int deg, int mesh){
+    string filename = name + "_d" + Utilities::to_string(deg, 0) + "_m" + Utilities::to_string(mesh, 0) + ".eps";
+    cout << "Mesh info:" << endl << " dimension: " << dim << endl
+              << " no. of cells: " << triangulation.n_active_cells() << endl;
+    map<types::boundary_id, unsigned int> boundary_count;
+    for (auto &c : triangulation.active_cell_iterators()) {
+        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face) {
+            if (c->face(face)->at_boundary())
+                boundary_count[c->face(face)->boundary_id()]++;
+        }
+    }
+    cout << " boundary indicators: ";
+    for (const pair<const types::boundary_id, unsigned int> &pair : boundary_count) {
+        cout << pair.first << "(" << pair.second << " times) ";
+    }
+    cout << endl;
+    ofstream out(filename);
+    GridOut grid_out;
+    grid_out.write_eps(triangulation, out);
+    cout << " written to " << filename << endl << endl;
+}
+
 template<int dim>
 class SourceTerm : public Function<dim> {
 public: SourceTerm() : Function<dim>(1) {}
@@ -68,11 +91,14 @@ public:
 private:
 
     SourceTerm<dim> source_term;
-    string filename_dir = "output/Classic/";
+    string filename_dir = "output/NonUniformMesh/";
 
     void make_grid_and_dofs(int numberCells, double inf_domain, double sup_domain) {
         GridGenerator::hyper_cube(this->triangulation, inf_domain, sup_domain);
         this->triangulation.refine_global(numberCells);
+
+        GridTools::distort_random(0.25, this->triangulation, true);
+        print_mesh_info(this->triangulation, "grid", this->degree, numberCells);
 
         this->dof_handler.distribute_dofs(this->fe);
         this->dof_handler_local.distribute_dofs(this->fe_local);
@@ -92,14 +118,14 @@ private:
 
         this->constraints.clear();
         DoFTools::make_hanging_node_constraints(this->dof_handler, this->constraints);
-        std::map<types::boundary_id, const Function<dim> *> boundary_functions;
+        map<types::boundary_id, const Function<dim> *> boundary_functions;
         VectorTools::interpolate_boundary_values(this->dof_handler, 0 , DirichletBoundary<dim>(), this->constraints );
         this->constraints.close();
     }
 
     void assemble_system( bool globalProblem ) {
 
-        const double delta  = 0.;
+        const double delta  = 0.5   ;
         const double delta1 = -delta;
         const double delta2 =  delta;
         const double delta3 =  delta;
@@ -224,7 +250,7 @@ private:
 
 int main () {
     const int dim = 2;
-    for (int degree = 1; degree <= 3; ++degree) {
+    for (int degree = 2; degree <= 3; ++degree) {
         ConvergenceTable convergence_table;
 
         for (int i = 2; i <= 7; ++i) {
