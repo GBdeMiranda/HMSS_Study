@@ -1,7 +1,5 @@
 # Stable and Stabilized Hybrid Finite Element Methods for Miscible Flows in Heterogeneous Porous Media
 
-This repository contains the code developed for the research titled "Stable and Stabilized Hybrid Finite Element Methods for Miscible Flows in Heterogeneous Porous Media", which was conducted as a requirement to obtain a master's degree in computational modeling.
+This repository hosts the code from the research "Stable and Stabilized Hybrid Finite Element Methods for Miscible Flows in Heterogeneous Porous Media", a requisite for a master's degree in computational modeling. The research focuses on hybrid finite element methods, emphasizing stability and stabilization for simulating incompressible miscible displacements in porous media. It integrates transport and Darcy's equations. The provided code facilitates implementation and evaluation of these methods, aiding researchers in advancing this field of study.
 
-The main objective of this study is to investigate hybrid methods that utilize stable and stabilized finite elements for modeling incompressible miscible displacements in porous media using both transport and Darcy's equations. 
-
-The code included in this repository serves as a tool for implementing and testing the proposed methods, and can be used by researchers interested in further exploring this area of study.
+Access the documented in Portuguese study at the following link: [Métodos de Elementos Finitos Híbridos Estáveis e Estabilizados para Escoamentos Miscíveis em Meios Porosos Heterogêneos](http://repositorio.ufjf.br:8080/jspui/bitstream/ufjf/13092/1/gabrielbrandaodemiranda.pdf).
